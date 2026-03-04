@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>점수 관리 시스템</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 350px;
+      margin: 20px auto;
+    }
+    input, textarea {
+      width: 95%;
+      padding: 10px;
+      margin: 8px 0;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+	  font-family: Arial, sans-serif; /* input과 동일한 글꼴 적용 */
+    }
+    textarea {
+      resize: vertical;
+      height: 60px;
+    }
+    .buttons-container {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      margin-bottom: 10px;
+    }
+    .buttons-container button {
+      flex: 0 0 15%;
+      padding: 8px;
+      font-size: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+    }
+    .buttons-container button:hover {
+      background-color: #0056b3;
+    }
+	.buttons-container button.negative {
+	  background-color: #ff7f50; /* 주황색 */
+	}
+	.buttons-container button.negative:hover {
+      background-color: #e6603a; /* 진한 주황색 */
+    }
+	.buttons-container button.zero {
+      background-color: #28a745; /* 녹색 */
+    }
+	.buttons-container button.zero:hover {
+      background-color: #218838; /* 진한 녹색 */
+    }
+    .name-input-container {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    .name-input-container input {
+      flex: 1;
+    }
+    .name-input-container button {
+      padding: 8px;
+      font-size: 12px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .name-input-container button:hover {
+      background-color: #0056b3;
+    }
+    #scoreList {
+      background: #fff;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 350px;
+      margin: 20px auto;
+      list-style: none;
+    }
+    #scoreList li {
+      background-color: #f0f0f0;
+      margin-bottom: 10px;
+      padding: 8px;
+      border-radius: 5px;
+    }
+	#pListTable {
+	  background: #fff;
+	  width: 95%;
+	  max-width: 350px;
+	  border-collapse: collapse;
+	  margin: 20px auto;
+	  border-radius: 10px;
+	  overflow: hidden;
+	  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	}
+	#pListTable th,
+	#pListTable td {
+	  padding: 12px;
+	  color: black; /* 기본 텍스트 색상 */
+	  text-align: center;
+	  border-bottom: 1px solid #ccc;
+	}
+	#pListTable td.negative {
+	  color: #ff7f50; /* 주황색 */
+	}
+	#pListTable th {
+	  background-color: #007bff;
+	  color: white;
+	  font-weight: bold;
+	}
+	#pListTable tr:nth-child(even) {
+	  background-color: #f9f9f9;
+	}
+	#pListTable tr:hover {
+	  background-color: #f1f1f1;
+	}
+    .submitBtn {
+      display: block;
+	  max-width: 360px;
+      width: 100%;
+      background-color: #28a745;
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 10px;
+      margin: 20px auto;
+      border: none;
+      border-radius: 5px;
+      text-align: center;
+    }
+    .submitBtn:hover {
+      background-color: #218838;
+    }
+	.submitBtn:disabled {
+	  pointer-events: none;
+	  background-color: #ccc;
+	  cursor: not-allowed;
+	  opacity: 0.6;
+	}
+	.score-list-item {
+	  display: flex;
+	  justify-content: space-between; /* 텍스트와 버튼을 양쪽 정렬 */
+	  align-items: center; /* 수직 가운데 정렬 */
+	  padding: 10px;
+	  margin-bottom: 10px;
+	  border: 1px solid #ddd;
+	  border-radius: 5px;
+	  background-color: #f9f9f9;
+	}
+	.custom-button {
+	  padding: 5px 10px;
+	  margin-left: 5px;
+	  font-size: 14px;
+	  border: none;
+	  border-radius: 5px;
+	  cursor: pointer;
+	}
+	.custom-button.check {
+	  background-color: #28a745;
+	  color: white;
+	}
+	.custom-button.check:hover {
+	  background-color: #1e7e34;
+	}
+  </style>
+</head>
+<body>
+  <h2>점수 목록</h2>
+  <ul id="scoreList"></ul>
+
+  <form id="scoreForm">
+	<button type="submit" id="submitBtn" class="submitBtn">점수 저장</button>
+    
+	<input type="number" id="point" placeholder="점수" value="0" required oninput="toggleSubmitButton()" />
+	
+    <div class="buttons-container">
+      <button type="button" class="negative" onclick="selectScore(-5)">-5</button>
+      <button type="button" class="negative" onclick="selectScore(-1)">-1</button>
+      <button type="button" class="zero" onclick="selectScore(0)">0</button>
+      <button type="button" onclick="selectScore(1)">1</button>
+      <button type="button" onclick="selectScore(5)">5</button>
+      <button type="button" onclick="selectScore(10)">10</button>
+    </div>
+
+    <div class="name-input-container">
+	  <input type="text" id="nm" placeholder="이름" required />
+	  <!-- 버튼은 JavaScript로 동적으로 생성 -->
+	</div>
+
+    <input type="text" id="gp" placeholder="가족" value="" required />
+    <textarea id="comment" placeholder="비고"></textarea>
+    <input type="text" id="user" placeholder="입력자" required readonly />
+  </form>
+  <h2>기준 점수 <button type="button" id="edit" class="edit">수정</button>
+	<label style="display: inline-flex; align-items: center; font-size: 14px; margin-left: 40px; white-space: nowrap;">
+    <input type="checkbox" id="cumulativeCheck" checked> 누적
+	</label>
+  </h2>
+	<table id="pListTable" border="1">
+	  <thead>
+		<tr>
+		  <th style="display: none;">코드</th> <!-- 숨겨진 열 -->
+		  <th>이름</th>
+		  <th>점수</th>
+		</tr>
+	  </thead>
+	  <tbody id="pList"></tbody>
+	</table>
+	
+  <form id="scoreForm2">
+	<button type="submit" id="extraSubmitBtn" class="submitBtn">점수 저장</button>
+    
+	<input type="number" id="extraPoint" placeholder="점수" value="0" required oninput="toggleSubmitButton()" />
+  </form>
+  
+  <script>
+
+  </script>
+
+  <script src="script.js"></script>
+</body>
+</html>

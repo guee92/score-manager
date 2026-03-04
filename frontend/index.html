@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>사용자 선택</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+    }
+    .user-button {
+      display: block;
+      width: 200px;
+      padding: 10px;
+      margin: 10px auto;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .user-button:hover {
+      background-color: #0056b3;
+    }
+    .restart-button {
+      display: block;
+      width: 100px;
+      padding: 10px;
+      margin: 20px auto;
+      background-color: #ff9800;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 10px;
+	  margin: 20px 0 20px auto;
+    }
+    .restart-button:hover {
+      background-color: #e68900;
+    }
+  </style>
+</head>
+<body>
+  <button class="restart-button" onclick="restartServer()">서버 재기동</button>
+  <h2>사용자 선택</h2>
+  <div id="userList"></div>
+
+  <script>
+    async function restartServer() {
+      try {
+        const response = await fetch('/restart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const message = await response.text();
+        alert(message);
+      } catch (error) {
+        console.error('서버 재기동 중 오류:', error);
+        alert('서버 재기동 중 오류가 발생했습니다.');
+      }
+    }
+
+    async function fetchUsers() {
+      try {
+		const response = await fetch(`/users?gp=${encodeURIComponent('잼솜가족')}`);
+		const users = await response.json();
+		const userList = document.getElementById('userList');
+
+		// Clear existing users
+		userList.innerHTML = '';
+
+		// Render users
+		users.forEach(user => {
+		  const button = document.createElement('button');
+		  button.textContent = user.user;
+		  button.className = 'user-button';
+		  button.onclick = () => verifyPassword(user.gp, user.user, user.pw, user.chk);
+		  userList.appendChild(button);
+		});
+	  } catch (error) {
+		console.error('Error fetching users by group:', error);
+	  }
+    }
+
+    function verifyPassword(userGp, userName, correctPassword, userChk) {
+      if (!correctPassword.trim()) {
+        window.location.href = `main.html?user=${encodeURIComponent(userName)}&chk=${encodeURIComponent(userChk)}&gp=${encodeURIComponent(userGp)}`;
+        return;
+      }
+      const password = prompt('비밀번호를 입력하세요:');
+      if (password === correctPassword) {
+        window.location.href = `main.html?user=${encodeURIComponent(userName)}&chk=${encodeURIComponent(userChk)}&gp=${encodeURIComponent(userGp)}`;
+      } else {
+        alert('비밀번호가 틀렸습니다!');
+      }
+    }
+
+    // 페이지 로드 시 사용자 목록 불러오기
+    window.onload = fetchUsers;
+  </script>
+</body>
+</html>

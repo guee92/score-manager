@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>체크 리스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            margin: 8px 0;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+        }
+        .comment {
+            flex: 1;
+            margin: 0 10px;
+            font-size: 14px;
+            color: #555;
+        }
+        .chk-status {
+            cursor: pointer;
+            transform: scale(1.5);
+        }
+        .nm {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>체크 리스트 <button type="button" id="edit" class="edit">수정</button></h1>
+    <ul id="chklist">
+        <!-- 데이터가 동적으로 추가됩니다 -->
+    </ul>
+
+    <script>
+        // URL에서 파라미터 가져오기
+        function getURLParameter(name) {
+            const params = new URLSearchParams(window.location.search);
+            return params.get(name);
+        }
+
+        // 데이터 불러오기 및 표시
+        async function loadChkList() {
+            const nm = getURLParameter('nm'); // 필요한 경우 파라미터 가져오기
+            const response = await fetch(`/chklist?nm=${encodeURIComponent(nm)}`);
+            if (!response.ok) {
+                alert('데이터를 가져오는 데 실패했습니다.');
+                return;
+            }
+
+            const data = await response.json();
+            const chklist = document.getElementById('chklist');
+            chklist.innerHTML = ''; // 기존 데이터 초기화
+
+            data.forEach(row => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                    <span class="nm">${row.nm}</span>
+                    <span class="comment">${row.comment || '비고 없음'}</span>
+                    <input type="checkbox" class="chk-status" 
+                           data-cd="${row.cd}" 
+                           data-nm="${row.nm || ''}" 
+                           data-comment="${row.comment || ''}" 
+                           ${row.chk_status === 'Y' ? 'checked' : ''}>
+                `;
+                chklist.appendChild(li);
+            });
+
+            // 체크박스 상태 변경 이벤트 추가
+            document.querySelectorAll('.chk-status').forEach(checkbox => {
+                checkbox.addEventListener('change', async (e) => {
+                    const cd = e.target.getAttribute('data-cd');
+                    const nm = e.target.getAttribute('data-nm');
+                    const comment = e.target.getAttribute('data-comment');
+                    const chk_status = e.target.checked ? 'Y' : 'N';
+
+                    try {
+                        const response = await fetch('/updateChkStatus', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ cd, nm, comment, chk_status }),
+                        });
+
+                        if (!response.ok) {
+                            alert('상태 변경 실패');
+                            e.target.checked = !e.target.checked; // 상태 복원
+                        }
+                    } catch (error) {
+                        alert('상태 변경 중 오류가 발생했습니다.');
+                        console.error(error);
+                        e.target.checked = !e.target.checked; // 상태 복원
+                    }
+                });
+            });
+        }
+
+		function hideScoreFormBasedOnChk() {
+		  if (getURLParameter('chk') === 'N') {
+			document.getElementById('edit').style.display = 'none';
+		  }
+		}
+		function chklistedit() {
+		  document.getElementById('edit').addEventListener('click', () => {
+		  const nm = getURLParameter('nm'); // URL에서 nm 값을 가져옵니다
+		  if (nm) {
+			window.location.href = `/chklistedit.html?nm=${encodeURIComponent(nm)}`; // nm 값을 전달하여 crud.html 호출
+		  } else {
+			alert('nm 값이 없습니다.');
+		  }
+		});
+		}
+		
+        // 페이지 로드 시 데이터 불러오기
+		window.onload = async () => {
+		  loadChkList();
+		  hideScoreFormBasedOnChk();
+		  chklistedit();
+		};
+    </script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.7">
+  <title>세부 점수 목록</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+	  display: flex;
+	  flex-direction: column;
+	  min-height: 100vh; /* 최소 높이를 화면 전체 높이로 설정 */
+    }
+    h2 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      max-width: 600px;
+      margin: 20px auto;
+      background: #fff;
+      border-collapse: collapse;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	  flex: 0.5; /* 테이블이 남은 공간을 차지하게 설정 */
+    }
+    th, td {
+      padding: 4px 8px;
+      text-align: center;
+      border-bottom: 1px solid #ccc;
+	  line-height: 1.0;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+	tr {
+	  height: auto;
+	}
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+    tr:hover {
+      background-color: #f1f1f1;
+    }
+    button {
+      display: block;
+      width: 200px;
+      margin: 20px auto;
+      padding: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+	.button-container {
+	  margin-top: auto; /* 버튼 컨테이너를 항상 하단으로 밀어냄 */
+	  padding-bottom: 20px; /* 하단 여백 추가 */
+	}
+    .pagination {
+      text-align: center;
+      margin-top: 20px;
+    }
+    .pagination button {
+      display: inline-block;
+      width: 100px;
+    }
+	#detailsBody td.negative {
+	  color: #ff7f50; /* 주황색 */
+	}
+  </style>
+</head>
+<body>
+  <h2>세부 점수 목록</h2>
+  <table>
+	<colgroup>
+      <col style="width: 152px;"> <!-- 첫 번째 열 -->
+      <col style="width: 68px;"> <!-- 두 번째 열 -->
+      <col style="width: 52px;"> <!-- 세 번째 열 -->
+      <col style="width: auto;"> <!-- 네 번째 열 -->
+      <col style="width: 68px;"> <!-- 다섯 번째 열 -->
+    </colgroup>
+	<thead>
+      <tr>
+        <th>날짜</th>
+        <th>이름</th>
+        <th>점수</th>
+        <th>비고</th>
+        <th>입력자</th>
+      </tr>
+    </thead>
+    <tbody id="detailsBody"></tbody>
+  </table>
+  
+  <div class="pagination">
+    <button id="prevButton" onclick="changePage(-1)">이전</button>
+    <span id="pageInfo"></span>
+    <button id="nextButton" onclick="changePage(1)">다음</button>
+  </div>
+
+  <button onclick="goBack()">뒤로 가기</button>
+
+  <script>
+    let currentPage = 1;
+    const itemsPerPage = 15;
+    let data = [];
+
+    // URL에서 파라미터 가져오기
+    function getURLParameter(name) {
+      const params = new URLSearchParams(window.location.search);
+      return params.get(name);
+    }
+
+    // 날짜 포맷 함수
+    function formatDate(isoString) {
+      const date = new Date(isoString);
+	  const year = date.getFullYear();
+	  const month = String(date.getMonth() + 1).padStart(2, '0'); // 월은 0부터 시작하므로 +1
+	  const day = String(date.getDate()).padStart(2, '0');
+	  const hours = String(date.getHours()).padStart(2, '0'); // 24시간 형식 사용
+	  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+	  return `${year}-${month}-${day} ${hours}:${minutes}`; 
+    }
+
+    // 세부 점수 불러오기
+    async function loadDetails() {
+      const gp = getURLParameter('gp');
+      const nm = getURLParameter('nm');
+
+      try {
+        const response = await fetch(`/details?gp=${encodeURIComponent(gp)}&nm=${encodeURIComponent(nm)}`);
+        data = await response.json();
+        displayPage(currentPage);
+      } catch (error) {
+        console.error('Error fetching details:', error);
+      }
+    }
+
+    // 페이지별 데이터 표시
+    function displayPage(page) {
+      const detailsBody = document.getElementById('detailsBody');
+      detailsBody.innerHTML = '';
+
+      const start = (page - 1) * itemsPerPage;
+      const end = start + itemsPerPage;
+      const paginatedItems = data.slice(start, end);
+
+      paginatedItems.forEach(item => {
+        const row = document.createElement('tr');
+		const scoreClass = item.point < 0 ? 'negative' : '';
+        row.innerHTML = `
+          <td>${formatDate(item.c_date)}</td>
+          <td>${item.nm}</td>
+          <td class="${scoreClass}">${item.point}</td>
+          <td>${item.comment}</td>
+          <td>${item.user}</td>
+        `;
+		
+        detailsBody.appendChild(row);
+      });
+	  
+	   // 빈 행 추가
+	  const rowsToAdd = itemsPerPage - paginatedItems.length;
+	  for (let i = 0; i < rowsToAdd; i++) {
+		const emptyRow = document.createElement('tr');
+		emptyRow.innerHTML = `
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		  <td>&nbsp;</td>
+		`;
+		detailsBody.appendChild(emptyRow);
+	  }
+      updatePaginationInfo();
+    }
+
+    // 페이지네이션 정보 업데이트
+    function updatePaginationInfo() {
+      const pageInfo = document.getElementById('pageInfo');
+      const totalPages = Math.ceil(data.length / itemsPerPage);
+
+      pageInfo.textContent = `페이지 ${currentPage} / ${totalPages}`;
+
+      document.getElementById('prevButton').disabled = currentPage === 1;
+      document.getElementById('nextButton').disabled = currentPage === totalPages;
+    }
+
+    // 페이지 변경 함수
+    function changePage(direction) {
+      currentPage += direction;
+      displayPage(currentPage);
+    }
+
+    // 뒤로 가기 함수
+    function goBack() {
+      window.history.back();
+    }
+
+    // 페이지 로드 시 실행
+    window.onload = loadDetails;
+  </script>
+</body>
+</html>
